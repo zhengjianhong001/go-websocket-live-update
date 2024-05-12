@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Client Example</title>
+    <!-- 引入 Socket.IO 客户端库 -->
+    <!-- <script src="./socket.io.min.js"></script> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/1.7.0/socket.io.min.js"></script>
+</head>
+<body>
+    <h2>Socket.IO Client Example 实时更新</h2>
+    <input id="emitField" type="text">
+    <button onclick="sendMessage()">Send Message</button>
+    <button onclick="joinRooms()">join rooms</button>
+    <div id="messages"></div>
+    <script>
+        // 初始化 Socket 连接
+        const socket = io('http://localhost:3032'); // 替换为服务器地址
+        // 监听连接状态
+        socket.on('connect', function() {
+            console.log('Connected to the server!');
+        });
+        socket.on("connect_error", (err) => {
+            // the reason of the error, for example "xhr poll error"
+            console.log(err.message);
+
+            // some additional description, for example the status code of the initial HTTP response
+            console.log(err.description);
+
+            // some additional context, for example the XMLHttpRequest object
+            console.log(err.context);
+        });
+        socket.on('disconnect', function() {
+            console.log('Disconnected from the server.');
+        });
+        // 错误处理
+        socket.on('error', function(err) {
+            console.error('An error occurred:', err);
+        });
+
+        function sendMessage() {
+            const message = document.getElementById('emitField').value;
+            if(message) {
+                socket.emit('notice', message); // 触发服务器监听的事件
+                document.getElementById('emitField').value = '';
+            }
+        }
+        // 加入房间
+        function joinRooms() {
+            // 发送事件到服务器，并提供一个回调函数来接收响应
+            socket.emit('msg', document.getElementById('emitField').value, function(responseData) { // 这种模式通常被称为“acknowledgements”（确认机制），它允许服务器在处理完客户端发出的事件后，向客户端发送一个确认消息或者返回一些数据。
+                console.log('服务器响应:', responseData);
+            });
+
+            socket.emit('join_rooms', ""); // 触发服务器监听的事件
+        }
+        socket.on('reply', function(msg) {
+            console.log('reply: ' + msg);
+        });
+        socket.on('bcard', function (msg) {
+            console.log("广播：" + msg);
+        });
+        socket.on('join_rooms', function (msg) {
+            console.log(msg);
+        });
+        socket.on('change', function (msg) {
+            document.getElementById('messages').innerHTML += "<br>" + msg;
+        });
+
+    </script>
+</body>
+</html>
